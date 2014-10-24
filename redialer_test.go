@@ -46,19 +46,10 @@ func init() {
 	}()
 }
 
-type tcpDialer struct{}
-
-func (d *tcpDialer) Dial() (conn io.Closer, err error) {
-	return net.Dial("tcp", d.Addr())
-}
-
-func (d *tcpDialer) Addr() string {
-	port := strconv.Itoa(l.Addr().(*net.TCPAddr).Port)
-	return net.JoinHostPort(host, port)
-}
-
 func Test(t *testing.T) {
-	d := &tcpDialer{}
+	port := strconv.Itoa(l.Addr().(*net.TCPAddr).Port)
+	address := net.JoinHostPort(host, port)
+	d := redialer.NetDialer{"tcp", address}
 	r := redialer.New(d)
 	go r.Run()
 
