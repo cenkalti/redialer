@@ -1,3 +1,4 @@
+// Package netredialer provides a reconnecting net.Conn implementation.
 package netredialer
 
 import (
@@ -21,12 +22,20 @@ func (d netDialer) Addr() string {
 }
 
 type NetRedialer struct {
-	*redialer.Redialer
+	redialer *redialer.Redialer
 }
 
 func New(network, address string) *NetRedialer {
 	d := &netDialer{network, address}
 	return &NetRedialer{redialer.New(d)}
+}
+
+func (r *NetRedialer) Run() {
+	r.redialer.Run()
+}
+
+func (r *NetRedialer) Close() error {
+	return r.redialer.Close()
 }
 
 func (r *NetRedialer) Conn() <-chan net.Conn {
@@ -36,7 +45,7 @@ func (r *NetRedialer) Conn() <-chan net.Conn {
 }
 
 func (r *NetRedialer) notifyConn(ch chan<- net.Conn) {
-	rconn, ok := <-r.Redialer.Conn()
+	rconn, ok := <-r.redialer.Conn()
 	if !ok {
 		close(ch)
 		return

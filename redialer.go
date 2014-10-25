@@ -1,4 +1,8 @@
 // Package redialer provides a generic redialer for connection-like types in Go.
+// It is useful when you need to access a connection from multiple goroutines.
+// It helps to keep the reconnection logic in a single goroutine and provide protected access to the connection.
+//
+// See netredialer subpackage for usage example.
 package redialer
 
 import (

@@ -46,6 +46,32 @@ func init() {
 	}()
 }
 
+func Example() {
+	r := netredialer.New("tcp", "localhost:5000")
+	go r.Run()
+
+	// Each goroutine uses the same NetRedialer.
+	worker := func(id int) {
+		for {
+			// Wait until the connection is established.
+			conn := <-r.Conn()
+
+			// Use the connection.
+			_, err := conn.Write([]byte("message from " + strconv.Itoa(id)))
+			if err != nil {
+				// Don't forget to call Close, it signals Redialer to reconnect.
+				conn.Close()
+			}
+		}
+	}
+
+	for i := 0; i < 5; i++ {
+		go worker(i)
+	}
+
+	select {}
+}
+
 func Test(t *testing.T) {
 	port := strconv.Itoa(l.Addr().(*net.TCPAddr).Port)
 	address := net.JoinHostPort(host, port)

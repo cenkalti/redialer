@@ -1,3 +1,4 @@
+// Package amqpredialer provides a reconnecting version of github.com/streadway/amqp.Conn.
 package amqpredialer
 
 import (
@@ -21,7 +22,7 @@ func (d amqpDialer) Addr() string {
 }
 
 type AMQPRedialer struct {
-	*redialer.Redialer
+	redialer *redialer.Redialer
 }
 
 func New(uri string) (*AMQPRedialer, error) {
@@ -39,6 +40,14 @@ func New(uri string) (*AMQPRedialer, error) {
 	}, nil
 }
 
+func (r *AMQPRedialer) Run() {
+	r.redialer.Run()
+}
+
+func (r *AMQPRedialer) Close() error {
+	return r.redialer.Close()
+}
+
 func (r *AMQPRedialer) Conn() <-chan *amqp.Connection {
 	ch := make(chan *amqp.Connection, 1)
 	go r.notifyConn(ch)
@@ -46,7 +55,7 @@ func (r *AMQPRedialer) Conn() <-chan *amqp.Connection {
 }
 
 func (r *AMQPRedialer) notifyConn(ch chan<- *amqp.Connection) {
-	rconn, ok := <-r.Redialer.Conn()
+	rconn, ok := <-r.redialer.Conn()
 	if !ok {
 		close(ch)
 		return
