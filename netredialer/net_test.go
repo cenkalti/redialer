@@ -1,4 +1,4 @@
-package redialer_test
+package netredialer_test
 
 import (
 	"bufio"
@@ -9,7 +9,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/cenkalti/redialer"
+	"github.com/cenkalti/redialer/netredialer"
 )
 
 const host = "localhost"
@@ -49,31 +49,26 @@ func init() {
 func Test(t *testing.T) {
 	port := strconv.Itoa(l.Addr().(*net.TCPAddr).Port)
 	address := net.JoinHostPort(host, port)
-	d := redialer.NetDialer{"tcp", address}
-	r := redialer.New(d)
+	r := netredialer.New("tcp", address)
 	go r.Run()
 
-	var conn *redialer.Conn
-	var netConn net.Conn
+	var conn net.Conn
 
 	select {
 	case conn = <-r.Conn():
+		testRead(t, conn)
 	case <-time.After(time.Second):
 		t.Fatal("timeout")
 	}
-	netConn = conn.Get().(net.Conn)
-	testRead(t, netConn)
 
-	netConn.Close()
-	conn.SetClosed()
+	conn.Close()
 
 	select {
 	case conn = <-r.Conn():
+		testRead(t, conn)
 	case <-time.After(time.Second):
 		t.Fatal("timeout")
 	}
-	netConn = conn.Get().(net.Conn)
-	testRead(t, netConn)
 }
 
 func testRead(t *testing.T, conn net.Conn) {

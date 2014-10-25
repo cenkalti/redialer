@@ -41,18 +41,19 @@ func (r *NetRedialer) notifyConn(ch chan<- net.Conn) {
 		close(ch)
 		return
 	}
-	ch <- rconn.Get().(net.Conn)
+	nconn := rconn.Get().(net.Conn)
+	ch <- &conn{nconn, rconn}
 }
 
 type conn struct {
 	net.Conn
-	rc *redialer.Conn
+	rconn *redialer.Conn
 }
 
 func (c *conn) Read(b []byte) (n int, err error) {
 	n, err = c.Conn.Read(b)
 	if err != nil {
-		c.rc.SetClosed()
+		c.rconn.SetClosed()
 	}
 	return
 }
@@ -60,7 +61,13 @@ func (c *conn) Read(b []byte) (n int, err error) {
 func (c *conn) Write(b []byte) (n int, err error) {
 	n, err = c.Conn.Write(b)
 	if err != nil {
-		c.rc.SetClosed()
+		c.rconn.SetClosed()
 	}
 	return
+}
+
+func (c *conn) Close() error {
+	err := c.Conn.Close()
+	c.rconn.SetClosed()
+	return err
 }
