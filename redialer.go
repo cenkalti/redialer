@@ -51,7 +51,7 @@ func New(d Dialer) *Redialer {
 
 // Conn sends the connected connection on the returned channel.
 // Only one Conn will be sent to the channel.
-// If the Redialer is closed, no value will be sent.
+// If the Redialer is closed, the channel is closed.
 func (r *Redialer) Conn() <-chan *Conn {
 	ch := make(chan *Conn, 1)
 	go r.notifyConn(ch)
@@ -65,6 +65,7 @@ func (r *Redialer) notifyConn(ch chan<- *Conn) {
 		r.cond.Wait()
 	}
 	if r.closed {
+		close(ch)
 		return
 	}
 	ch <- &Conn{
