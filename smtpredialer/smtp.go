@@ -20,7 +20,7 @@ func (d smtpDialer) Addr() string {
 }
 
 type SMTPRedialer struct {
-	*redialer.Redialer
+	redialer *redialer.Redialer
 }
 
 func New(address string) *SMTPRedialer {
@@ -28,14 +28,22 @@ func New(address string) *SMTPRedialer {
 	return &SMTPRedialer{redialer.New(d)}
 }
 
-func (r *SMTPRedialer) Conn() <-chan *Client {
+func (r *SMTPRedialer) Run() {
+	r.redialer.Run()
+}
+
+func (r *SMTPRedialer) Close() error {
+	return r.redialer.Close()
+}
+
+func (r *SMTPRedialer) Client() <-chan *Client {
 	ch := make(chan *Client, 1)
 	go r.notifyConn(ch)
 	return ch
 }
 
 func (r *SMTPRedialer) notifyConn(ch chan<- *Client) {
-	rconn, ok := <-r.Redialer.Conn()
+	rconn, ok := <-r.redialer.Conn()
 	if !ok {
 		close(ch)
 		return
