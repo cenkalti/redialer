@@ -4,7 +4,6 @@ package redialer
 import (
 	"io"
 	"log"
-	"net/smtp"
 	"sync"
 	"time"
 )
@@ -123,16 +122,4 @@ func (r *Redialer) connClosed(conn *Conn) {
 		log.Println("disconnected from", r.dialer.Addr())
 		r.cond.Broadcast()
 	}
-}
-
-type SMTPDialer struct {
-	Address string
-}
-
-func (d SMTPDialer) Dial() (conn io.Closer, err error) {
-	return smtp.Dial(d.Address)
-}
-
-func (d SMTPDialer) Addr() string {
-	return d.Address
 }

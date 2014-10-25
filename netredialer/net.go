@@ -50,22 +50,6 @@ type conn struct {
 	rconn *redialer.Conn
 }
 
-func (c *conn) Read(b []byte) (n int, err error) {
-	n, err = c.Conn.Read(b)
-	if err != nil {
-		c.rconn.SetClosed()
-	}
-	return
-}
-
-func (c *conn) Write(b []byte) (n int, err error) {
-	n, err = c.Conn.Write(b)
-	if err != nil {
-		c.rconn.SetClosed()
-	}
-	return
-}
-
 func (c *conn) Close() error {
 	err := c.Conn.Close()
 	c.rconn.SetClosed()
