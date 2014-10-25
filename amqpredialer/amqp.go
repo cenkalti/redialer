@@ -1,4 +1,4 @@
-// Package amqpredialer provides a reconnecting version of github.com/streadway/amqp.Conn.
+// Package amqpredialer provides a redialer for github.com/streadway/amqp.Conn.
 package amqpredialer
 
 import (

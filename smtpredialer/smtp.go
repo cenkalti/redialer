@@ -1,3 +1,4 @@
+// Package smtpredialer provides a redialer for smtp.Client.
 package smtpredialer
 
 import (
