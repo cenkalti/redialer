@@ -89,7 +89,6 @@ func (r *Redialer) Close() error {
 }
 
 func (r *Redialer) Run() {
-	var err error
 	for {
 		r.m.Lock()
 		for r.conn != nil && !r.closed {
@@ -97,14 +96,25 @@ func (r *Redialer) Run() {
 		}
 		if r.closed {
 			if r.conn != nil {
-				r.Close()
+				r.conn.Close()
 			}
 			r.m.Unlock()
 			break
 		}
-		for !r.closed {
+		r.m.Unlock()
+
+		var conn io.Closer
+		for {
+			r.m.Lock()
+			closed := r.closed
+			r.m.Unlock()
+			if closed {
+				break
+			}
+
 			log.Println("connecting to", r.dialer.Addr())
-			r.conn, err = r.dialer.Dial()
+			var err error
+			conn, err = r.dialer.Dial()
 			if err != nil {
 				log.Println("cannot connect to", r.dialer.Addr(), "err:", err)
 				time.Sleep(time.Second)
@@ -112,8 +122,11 @@ func (r *Redialer) Run() {
 			}
 			break
 		}
-		r.m.Unlock()
+
 		log.Println("connected to", r.dialer.Addr())
+		r.m.Lock()
+		r.conn = conn
+		r.m.Unlock()
 		r.cond.Broadcast()
 	}
 }
