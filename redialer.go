@@ -116,6 +116,7 @@ func (r *Redialer) Run() {
 			var err error
 			conn, err = r.dialer.Dial()
 			if err != nil {
+				conn = nil // implementation may return non-nil value on error
 				log.Println("cannot connect to", r.dialer.Addr(), "err:", err)
 				time.Sleep(time.Second)
 				continue
