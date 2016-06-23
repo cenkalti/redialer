@@ -3,8 +3,9 @@ package amqpredialer
 
 import (
 	"io"
+	"sync"
 
-	"github.com/cenkalti/redialer"
+	"github.com/cenk/redialer"
 	"github.com/streadway/amqp"
 )
 
@@ -23,6 +24,14 @@ func (d amqpDialer) Addr() string {
 
 type AMQPRedialer struct {
 	redialer *redialer.Redialer
+	channel  *amqpChannel
+}
+
+type amqpChannel struct {
+	mu sync.RWMutex
+
+	closed bool
+	c      *amqp.Channel
 }
 
 func New(uri string) (*AMQPRedialer, error) {
@@ -35,9 +44,12 @@ func New(uri string) (*AMQPRedialer, error) {
 		uri:     uri,
 		address: u.String(),
 	}
-	return &AMQPRedialer{
-		redialer.New(d),
-	}, nil
+	ar := &AMQPRedialer{
+		redialer: redialer.New(d),
+		channel:  &amqpChannel{closed: true},
+	}
+
+	return ar, nil
 }
 
 func (r *AMQPRedialer) Run() {
@@ -68,4 +80,59 @@ func (r *AMQPRedialer) notifyConn(ch chan<- *amqp.Connection) {
 		rconn.SetClosed()
 	}()
 	ch <- aconn
+}
+
+func (r *AMQPRedialer) Channel() <-chan *amqp.Channel {
+	ch := make(chan *amqp.Channel, 1)
+	go r.notifyChannel(ch)
+	return ch
+}
+
+func (r *AMQPRedialer) notifyChannel(ch chan<- *amqp.Channel) {
+	conn, ok := <-r.Conn()
+	if !ok {
+		close(ch)
+		return
+	}
+
+	r.channel.mu.Lock()
+	if r.channel.closed {
+		achan, err := conn.Channel()
+		if err != nil {
+			close(ch)
+			r.channel.mu.Unlock()
+			return
+		}
+		r.channel.c = achan
+		r.channel.closed = false
+	}
+	closed := make(chan *amqp.Error, 1)
+	r.channel.c.NotifyClose(closed)
+	r.channel.mu.Unlock()
+
+	go func() {
+		<-closed
+		r.channel.mu.Lock()
+		r.channel.closed = true
+		r.channel.mu.Unlock()
+	}()
+	ch <- r.channel.c
+}
+
+func (r *AMQPRedialer) CloseChannel() error {
+	r.channel.mu.Lock()
+	defer r.channel.mu.Unlock()
+	if !r.channel.closed {
+		return r.channel.c.Close()
+	}
+	return nil
+}
+
+func (r *AMQPRedialer) CancelChannel(consumer string, noWait bool) error {
+	r.channel.mu.Lock()
+	defer r.channel.mu.Unlock()
+	if !r.channel.closed {
+		return r.channel.c.Cancel(consumer, noWait)
+	}
+	return nil
 }
