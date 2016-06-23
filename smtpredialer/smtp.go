@@ -5,7 +5,7 @@ import (
 	"io"
 	"net/smtp"
 
-	"github.com/cenkalti/redialer"
+	"github.com/cenk/redialer"
 )
 
 type smtpDialer struct {
