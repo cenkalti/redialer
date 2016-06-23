@@ -9,7 +9,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/cenkalti/redialer/netredialer"
+	"github.com/cenk/redialer/netredialer"
 )
 
 const host = "localhost"
