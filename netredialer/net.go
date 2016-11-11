@@ -5,7 +5,7 @@ import (
 	"io"
 	"net"
 
-	"github.com/cenk/redialer"
+	"github.com/cenkalti/redialer"
 )
 
 type netDialer struct {

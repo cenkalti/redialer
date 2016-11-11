@@ -5,7 +5,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/cenk/redialer/amqpredialer"
+	"github.com/cenkalti/redialer/amqpredialer"
 )
 
 func TestClose(t *testing.T) {

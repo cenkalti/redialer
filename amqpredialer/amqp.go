@@ -4,7 +4,7 @@ package amqpredialer
 import (
 	"io"
 
-	"github.com/cenk/redialer"
+	"github.com/cenkalti/redialer"
 	"github.com/streadway/amqp"
 )
 
