@@ -140,6 +140,7 @@ func (r *Redialer) connClosed(conn *Conn) {
 	r.m.Lock()
 	defer r.m.Unlock()
 	if conn.connectedConn == r.conn {
+		r.conn.Close()
 		r.conn = nil
 		log.Println("disconnected from", r.dialer.Addr())
 		r.cond.Broadcast()
