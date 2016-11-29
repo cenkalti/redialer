@@ -21,11 +21,13 @@ type Redialer struct {
 	cond   sync.Cond
 }
 
+// Dialer is the interface passed to New function.
 type Dialer interface {
 	Addr() string // used in logs
 	Dial() (conn io.Closer, err error)
 }
 
+// Conn is the type that is returned from Redialer.Conn method.
 type Conn struct {
 	redialer      *Redialer
 	connectedConn io.Closer
@@ -43,6 +45,7 @@ func (c *Conn) SetClosed() {
 	c.redialer.connClosed(c)
 }
 
+// New returns a new Redialer from Dialer.
 func New(d Dialer) *Redialer {
 	r := &Redialer{
 		dialer: d,
@@ -88,6 +91,7 @@ func (r *Redialer) Close() error {
 	return r.conn.Close()
 }
 
+// Run the reconnection loop. Call this with a go statement.
 func (r *Redialer) Run() {
 	for {
 		r.m.Lock()
