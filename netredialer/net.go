@@ -21,6 +21,10 @@ func (d netDialer) Addr() string {
 	return d.Network + "://" + d.Address
 }
 
+func (d netDialer) OnConnect(conn *redialer.Conn) error {
+	return nil
+}
+
 type NetRedialer struct {
 	redialer *redialer.Redialer
 }

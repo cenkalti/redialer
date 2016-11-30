@@ -20,6 +20,10 @@ func (d smtpDialer) Addr() string {
 	return d.Address
 }
 
+func (d smtpDialer) OnConnect(conn *redialer.Conn) error {
+	return nil
+}
+
 type SMTPRedialer struct {
 	redialer *redialer.Redialer
 }

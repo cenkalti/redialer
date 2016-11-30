@@ -25,6 +25,7 @@ type Redialer struct {
 type Dialer interface {
 	Addr() string // used in logs
 	Dial() (conn io.Closer, err error)
+	OnConnect(conn *Conn) error
 }
 
 // Conn is the type that is returned from Redialer.Conn method.
@@ -42,7 +43,7 @@ func (c *Conn) Get() interface{} {
 // SetClosed tells Redialer that the connection is closed.
 // You have to call this function after your code detected the connection is disconnected.
 func (c *Conn) SetClosed() {
-	c.redialer.connClosed(c)
+	c.redialer.setClosed(c)
 }
 
 // New returns a new Redialer from Dialer.
@@ -125,10 +126,21 @@ func (r *Redialer) Run() {
 				time.Sleep(time.Second)
 				continue
 			}
+			log.Println("connected to", r.dialer.Addr())
+
+			rconn := &Conn{
+				redialer:      r,
+				connectedConn: r.conn,
+			}
+			err = r.dialer.OnConnect(rconn)
+			if err != nil {
+				log.Println("error in OnConnect handler:", err)
+				time.Sleep(time.Second)
+				continue
+			}
 			break
 		}
 
-		log.Println("connected to", r.dialer.Addr())
 		r.m.Lock()
 		r.conn = conn
 		r.m.Unlock()
@@ -136,7 +148,7 @@ func (r *Redialer) Run() {
 	}
 }
 
-func (r *Redialer) connClosed(conn *Conn) {
+func (r *Redialer) setClosed(conn *Conn) {
 	r.m.Lock()
 	defer r.m.Unlock()
 	if conn.connectedConn == r.conn {

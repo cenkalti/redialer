@@ -21,6 +21,17 @@ func (d amqpDialer) Addr() string {
 	return d.address
 }
 
+func (d amqpDialer) OnConnect(conn *redialer.Conn) error {
+	aconn := conn.Get().(*amqp.Connection)
+	closed := make(chan *amqp.Error, 1)
+	aconn.NotifyClose(closed)
+	go func() {
+		<-closed
+		conn.SetClosed()
+	}()
+	return nil
+}
+
 type AMQPRedialer struct {
 	redialer *redialer.Redialer
 }
@@ -61,11 +72,5 @@ func (r *AMQPRedialer) notifyConn(ch chan<- *amqp.Connection) {
 		return
 	}
 	aconn := rconn.Get().(*amqp.Connection)
-	closed := make(chan *amqp.Error, 1)
-	aconn.NotifyClose(closed)
-	go func() {
-		<-closed
-		rconn.SetClosed()
-	}()
 	ch <- aconn
 }
