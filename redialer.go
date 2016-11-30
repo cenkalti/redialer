@@ -130,7 +130,7 @@ func (r *Redialer) Run() {
 
 			rconn := &Conn{
 				redialer:      r,
-				connectedConn: r.conn,
+				connectedConn: conn,
 			}
 			err = r.dialer.OnConnect(rconn)
 			if err != nil {
